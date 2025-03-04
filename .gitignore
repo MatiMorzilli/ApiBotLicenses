@@ -1,0 +1,61 @@
+# Archivos byte-compilados de Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Entornos virtuales
+venv/
+ENV/
+env/
+.venv/
+
+# Archivos de distribución/paquetes
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Logs del instalador
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Reportes de tests y coverage
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# Caché de mypy
+.mypy_cache/
+
+# Archivos de PyInstaller
+*.manifest
+*.spec
+
+# Archivos de configuración de editores/IDE
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Archivos y carpetas específicos de macOS
+.DS_Store
