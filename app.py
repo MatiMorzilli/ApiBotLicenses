@@ -8,22 +8,17 @@ from dotenv import load_dotenv
 load_dotenv()
 
 DATABASE = 'licenses.db'
-# Obtener la API key administrativa de la variable de entorno (o usar un valor por defecto)
 ADMIN_API_KEY = os.environ.get("ADMIN_API_KEY", "clave_secreta_por_defecto")
+API_VERSION = "1.1"  # Versión actual de la API (la versión más reciente del bot)
 
 def get_db():
-    """Obtiene una conexión a la base de datos y la almacena en 'g' para la solicitud actual."""
     db = getattr(g, '_database', None)
     if db is None:
         db = g._database = sqlite3.connect(DATABASE)
-        db.row_factory = sqlite3.Row  # Permite acceder a columnas por nombre
+        db.row_factory = sqlite3.Row
     return db
 
 def init_db():
-    """
-    Crea la base de datos y la tabla 'licenses' si no existen.
-    Inserta registros de ejemplo si la tabla está vacía.
-    """
     db = sqlite3.connect(DATABASE)
     with db:
         db.execute("""
@@ -39,7 +34,6 @@ def init_db():
         cur = db.execute("SELECT COUNT(*) as count FROM licenses")
         count = cur.fetchone()["count"]
         if count == 0:
-            # Insertar licencias de ejemplo
             db.execute("""
                 INSERT INTO licenses (usuario, license_key, subscription_date, expiration_date, active)
                 VALUES (?, ?, ?, ?, ?)
@@ -51,10 +45,6 @@ def init_db():
     db.close()
 
 def check_api_key():
-    """
-    Verifica que en la cabecera se envíe la API key correcta (usando la cabecera 'X-API-KEY').
-    Retorna True si es válida, False en caso contrario.
-    """
     api_key = request.headers.get("X-API-KEY")
     return api_key == ADMIN_API_KEY
 
@@ -62,20 +52,17 @@ app = Flask(__name__)
 
 @app.teardown_appcontext
 def close_connection(exception):
-    """Cierra la conexión a la base de datos al finalizar la solicitud."""
     db = getattr(g, '_database', None)
     if db is not None:
         db.close()
 
+@app.route("/api/version", methods=["GET"])
+def get_version():
+    """Endpoint para obtener la versión actual del bot/API."""
+    return jsonify({"version": API_VERSION}), 200
+
 @app.route("/api/validate", methods=["POST"])
 def validate_license():
-    """
-    Endpoint público para validar una licencia.
-    Recibe un JSON con la clave "license" y verifica:
-      - Que la licencia exista en la base de datos.
-      - Que esté activa.
-      - Que, si tiene fecha de expiración, aún no esté expirada.
-    """
     data = request.get_json()
     if not data or "license" not in data:
         return jsonify({"valid": False, "message": "No se proporcionó la licencia"}), 400
@@ -107,19 +94,6 @@ def validate_license():
 
 @app.route("/api/admin/add_or_update_license", methods=["POST"])
 def add_or_update_license():
-    """
-    Endpoint administrativo para agregar o actualizar una licencia.
-    Requiere la cabecera 'X-API-KEY' con la API key correcta.
-    
-    Body de ejemplo:
-    {
-        "usuario": "usuario_nuevo",
-        "license_key": "LICENSE-0000-1111",
-        "subscription_date": "2023-03-03",
-        "expiration_date": "2023-12-31",
-        "active": 1
-    }
-    """
     if not check_api_key():
         return jsonify({"success": False, "message": "No autorizado"}), 401
 
@@ -159,15 +133,6 @@ def add_or_update_license():
 
 @app.route("/api/admin/deactivate_license", methods=["POST"])
 def deactivate_license():
-    """
-    Endpoint administrativo para desactivar una licencia.
-    Requiere la cabecera 'X-API-KEY' con la API key correcta.
-    
-    Body de ejemplo:
-    {
-        "license_key": "LICENSE-0000-1111"
-    }
-    """
     if not check_api_key():
         return jsonify({"success": False, "message": "No autorizado"}), 401
 
@@ -182,11 +147,6 @@ def deactivate_license():
 
 @app.route("/api/admin/list_licenses", methods=["GET"])
 def list_licenses():
-    """
-    Endpoint administrativo para listar todas las licencias.
-    Requiere la cabecera 'X-API-KEY' con la API key correcta.
-    No requiere body, es un GET.
-    """
     if not check_api_key():
         return jsonify({"success": False, "message": "No autorizado"}), 401
 
@@ -208,6 +168,5 @@ def list_licenses():
 if __name__ == "__main__":
     if not os.path.exists(DATABASE):
         init_db()
-    # Usa el puerto definido en la variable de entorno PORT o el 5000 por defecto.
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 5001))
     app.run(host="0.0.0.0", port=port)
